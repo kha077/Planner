@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Cimentación — Planificador</title>
+<style>
+  :root {
+    --teal: #0F6E56; --teal-mid: #1D9E75; --teal-light: #E1F5EE;
+    --purple: #534AB7; --purple-light: #EEEDFE;
+    --coral: #993C1D; --coral-light: #FAECE7;
+    --amber: #854F0B; --amber-light: #FAEEDA;
+    --gray: #5F5E5A; --gray-light: #F1EFE8;
+    --dark: #2C2C2A; --white: #fff;
+    --radius: 10px; --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f7f8f5; color: var(--dark); min-height: 100vh; }
+
+  /* NAV */
+  .nav { background: var(--teal); padding: 0; display: flex; align-items: stretch; flex-wrap: wrap; }
+  .nav-brand { padding: 14px 20px; color: #fff; font-weight: 700; font-size: 15px; letter-spacing: .5px; border-right: 1px solid rgba(255,255,255,.2); }
+  .nav-tabs { display: flex; flex-wrap: wrap; flex: 1; }
+  .nav-tab { padding: 14px 18px; color: rgba(255,255,255,.7); cursor: pointer; font-size: 13px; border: none; background: none; transition: all .2s; border-bottom: 3px solid transparent; }
+  .nav-tab.active, .nav-tab:hover { color: #fff; background: rgba(255,255,255,.1); border-bottom-color: var(--teal-light); }
+  .nav-data { display: flex; align-items: center; gap: 6px; padding: 0 14px; border-left: 1px solid rgba(255,255,255,.2); }
+  .nav-data-btn { padding: 8px 12px; color: rgba(255,255,255,.85); cursor: pointer; font-size: 12px; border: 1.5px solid rgba(255,255,255,.35); border-radius: 6px; background: none; transition: all .2s; white-space: nowrap; }
+  .nav-data-btn:hover { color: #fff; background: rgba(255,255,255,.15); border-color: rgba(255,255,255,.6); }
+  .data-msg { display: none; text-align: center; font-size: 13px; padding: 10px 16px; }
+  .data-msg.show { display: block; }
+  .data-msg.ok { background: var(--teal-light); color: var(--teal); }
+  .data-msg.err { background: var(--coral-light); color: var(--coral); }
+
+  /* VIEWS */
+  .view { display: none; padding: 24px; max-width: 960px; margin: 0 auto; }
+  .view.active { display: block; }
+
+  /* CARDS */
+  .card { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px 24px; margin-bottom: 20px; }
+  .card-title { font-size: 15px; font-weight: 700; color: var(--teal); margin-bottom: 14px; border-bottom: 2px solid var(--teal-light); padding-bottom: 8px; }
+
+  /* OBJECTIVE BOX */
+  .obj-box { background: linear-gradient(135deg, var(--teal) 0%, var(--teal-mid) 100%); border-radius: var(--radius); padding: 22px 24px; color: #fff; margin-bottom: 20px; }
+  .obj-box h2 { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; opacity: .8; margin-bottom: 8px; }
+  .obj-box p { font-size: 16px; line-height: 1.6; }
+  .obj-box .meta { margin-top: 14px; display: flex; gap: 20px; flex-wrap: wrap; }
+  .badge { background: rgba(255,255,255,.2); border-radius: 20px; padding: 4px 12px; font-size: 12px; }
+
+  /* DAILY PLANNER */
+  .time-blocks { display: grid; gap: 8px; }
+  .time-block { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: start; }
+  .time-label { font-size: 12px; color: var(--gray); text-align: right; padding-top: 8px; font-weight: 600; }
+  .block-content { border-radius: 8px; padding: 8px 12px; font-size: 13px; line-height: 1.5; }
+  .block-empr { background: var(--teal-light); color: var(--teal); border-left: 3px solid var(--teal-mid); }
+  .block-ing { background: var(--purple-light); color: var(--purple); border-left: 3px solid var(--purple); }
+  .block-sal { background: #E6F1FB; color: #185FA5; border-left: 3px solid #378ADD; }
+  .block-men { background: var(--amber-light); color: var(--amber); border-left: 3px solid var(--amber); }
+  .block-lib { background: var(--gray-light); color: var(--gray); border-left: 3px solid var(--gray); }
+  .block-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; opacity: .7; }
+
+  /* CHECKLIST */
+  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f0f0ed; cursor: pointer; }
+  .check-item:last-child { border-bottom: none; }
+  .check-item input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; accent-color: var(--teal); flex-shrink: 0; margin-top: 2px; }
+  .check-item label { font-size: 13px; cursor: pointer; line-height: 1.5; }
+  .check-item.done label { text-decoration: line-through; color: var(--gray); }
+
+  /* HABIT TRACKER */
+  .habit-grid { display: grid; gap: 6px; }
+  .habit-row { display: grid; grid-template-columns: 160px repeat(7, 1fr); gap: 4px; align-items: center; }
+  .habit-name { font-size: 12px; color: var(--dark); }
+  .habit-day { width: 32px; height: 32px; border-radius: 6px; border: 1.5px solid #e0ded8; background: #fafaf8; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--gray); transition: all .15s; }
+  .habit-day.done { background: var(--teal-mid); border-color: var(--teal); color: #fff; }
+  .habit-day.skip { background: var(--amber-light); border-color: var(--amber); color: var(--amber); }
+  .day-headers { display: grid; grid-template-columns: 160px repeat(7, 1fr); gap: 4px; margin-bottom: 4px; }
+  .day-h { text-align: center; font-size: 11px; color: var(--gray); font-weight: 600; width: 32px; }
+
+  /* PROGRESS */
+  .progress-bar { background: var(--gray-light); border-radius: 20px; height: 10px; overflow: hidden; margin: 6px 0; }
+  .progress-fill { height: 100%; border-radius: 20px; background: var(--teal-mid); transition: width .4s; }
+
+  /* METRICS */
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .metric { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; text-align: center; }
+  .metric-val { font-size: 28px; font-weight: 700; color: var(--teal); }
+  .metric-label { font-size: 11px; color: var(--gray); margin-top: 4px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* BELIEFS CARDS */
+  .beliefs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .belief-card { border-radius: var(--radius); overflow: hidden; }
+  .belief-lim { background: var(--coral-light); padding: 12px 14px; }
+  .belief-lim p { font-size: 12px; color: var(--coral); font-style: italic; }
+  .belief-lim .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--coral); opacity: .7; margin-bottom: 4px; }
+  .belief-ref { background: var(--teal-light); padding: 12px 14px; }
+  .belief-ref p { font-size: 12px; color: var(--teal); line-height: 1.5; }
+  .belief-ref .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--teal); opacity: .7; margin-bottom: 4px; }
+
+  /* MONTHLY MAP */
+  .month-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .month-card { border-radius: var(--radius); border: 1.5px solid var(--teal-light); overflow: hidden; }
+  .month-head { background: var(--teal); color: #fff; padding: 10px 14px; }
+  .month-head h3 { font-size: 14px; }
+  .month-head p { font-size: 11px; opacity: .8; }
+  .month-body { padding: 12px 14px; }
+  .month-item { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; border-bottom: 1px solid #f0f0ed; font-size: 12px; }
+  .month-item:last-child { border-bottom: none; }
+  .month-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--teal-mid); flex-shrink: 0; margin-top: 4px; }
+  .month-item input[type=checkbox] { flex-shrink: 0; margin-top: 2px; accent-color: var(--teal); }
+
+  /* WEEKLY REVIEW */
+  .review-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  textarea { width: 100%; border: 1.5px solid #e0ded8; border-radius: 8px; padding: 10px; font-size: 13px; font-family: inherit; resize: vertical; min-height: 80px; color: var(--dark); }
+  textarea:focus { outline: none; border-color: var(--teal-mid); }
+  .btn { padding: 8px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+  .btn-teal { background: var(--teal); color: #fff; }
+  .btn-teal:hover { background: var(--teal-mid); }
+  .btn-outline { background: transparent; border: 1.5px solid var(--teal); color: var(--teal); }
+  .btn-outline:hover { background: var(--teal-light); }
+
+  /* MANTRA */
+  .mantra-box { background: var(--purple-light); border-radius: var(--radius); padding: 18px 20px; border-left: 4px solid var(--purple); margin-bottom: 14px; }
+  .mantra-box p { font-size: 14px; color: var(--purple); font-style: italic; line-height: 1.6; }
+
+  /* 5 SEC RULE */
+  .five-sec { background: var(--coral-light); border-radius: var(--radius); padding: 16px 20px; text-align: center; margin-bottom: 16px; }
+  .five-sec h3 { color: var(--coral); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .five-sec .counter { font-size: 48px; font-weight: 900; color: var(--coral); line-height: 1; }
+  .five-sec p { font-size: 12px; color: var(--coral); opacity: .8; margin-top: 6px; }
+
+  /* STREAK */
+  .streak-display { text-align: center; padding: 16px; }
+  .streak-num { font-size: 56px; font-weight: 900; color: var(--amber); line-height: 1; }
+  .streak-label { font-size: 12px; color: var(--gray); text-transform: uppercase; letter-spacing: 1px; }
+  .streak-flames { font-size: 24px; letter-spacing: 2px; }
+
+  /* WEEK NAV */
+  .week-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .week-nav button { background: transparent; border: 1.5px solid var(--teal-light); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--teal); font-size: 13px; }
+  .week-nav button:hover { background: var(--teal-light); }
+  .week-nav span { font-size: 14px; font-weight: 700; color: var(--teal); flex: 1; text-align: center; }
+
+  /* COLUMNS */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* SECTION DIVIDER */
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); margin: 16px 0 8px; }
+
+  /* DMV indicator */
+  .dmv-banner { background: var(--amber-light); border: 1.5px solid var(--amber); border-radius: 8px; padding: 10px 14px; font-size: 13px; color: var(--amber); margin-bottom: 12px; text-align: center; display: none; transition: all .3s; }
+  .dmv-banner.show { display: block; }
+  .dmv-banner.celebrate { background: var(--teal-light); border-color: var(--teal-mid); color: var(--teal); font-weight: 700; }
+
+  #dmv-card { transition: box-shadow .3s, background .3s; }
+  #dmv-card.celebrate { background: var(--teal-light); box-shadow: 0 0 0 2px var(--teal-mid); }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.15); }
+    60% { transform: scale(.95); }
+    100% { transform: scale(1); }
+  }
+  .pop { animation: pop .45s ease; }
+
+  @keyframes confetti-fall {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(120px) rotate(360deg); opacity: 0; }
+  }
+  .confetti-burst { position: relative; overflow: visible; }
+  .confetti { position: absolute; top: 0; font-size: 18px; pointer-events: none; animation: confetti-fall 1s ease-out forwards; }
+
+  /* CALENDAR EVENTS */
+  .evento-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0ed; font-size: 13px; }
+  .evento-item:last-child { border-bottom: none; }
+  .evento-fecha { flex-shrink: 0; min-width: 90px; font-weight: 700; color: var(--teal); font-size: 12px; padding-top: 1px; }
+  .evento-fecha.pasado { color: var(--gray); }
+  .evento-texto { flex: 1; line-height: 1.5; }
+  .evento-texto.pasado { color: var(--gray); text-decoration: line-through; }
+  .evento-del { flex-shrink: 0; background: none; border: none; color: var(--coral); cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
+  .evento-del:hover { opacity: .6; }
+  .evento-empty { font-size: 13px; color: var(--gray); text-align: center; padding: 16px 0; }
+
+  @media (max-width: 600px) {
+    .month-grid { grid-template-columns: 1fr; }
+    .review-grid, .two-col { grid-template-columns: 1fr; }
+    .habits-grid { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">🧠 Sistema de Cimentación</div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('diario')">Diario</button>
+    <button class="nav-tab" onclick="showView('habitos')">Hábitos</button>
+    <button class="nav-tab" onclick="showView('calendario')">Calendario</button>
+    <button class="nav-tab" onclick="showView('mentalidad')">Mentalidad</button>
+    <button class="nav-tab" onclick="showView('semanal')">Revisión</button>
+    <button class="nav-tab" onclick="showView('mapa')">Mapa</button>
+  </div>
+  <div class="nav-data">
+    <button class="nav-data-btn" onclick="exportData()" title="Descargar todos tus datos en un archivo .json">⬇ Exportar</button>
+    <button class="nav-data-btn" onclick="document.getElementById('import-file').click()" title="Cargar datos desde un archivo .json exportado">⬆ Importar</button>
+    <input type="file" id="import-file" accept="application/json" style="display:none" onchange="importData(event)">
+  </div>
+</nav>
+<div id="data-msg" class="data-msg"></div>
+
+<!-- ═══════════════════════ DIARIO ═══════════════════════ -->
+<div id="view-diario" class="view active">
+  <div class="obj-box">
+    <h2>Mi objetivo madre</h2>
+    <p>Ser la especialista en regulación del sistema nervioso para mujeres profesionales, generando USD 700/mes en 3 meses — empezando hoy con lo que tengo.</p>
+    <div class="meta">
+      <span class="badge">📅 Fase 1 — Cimentación</span>
+      <span class="badge" id="today-date"></span>
+      <span class="badge" id="days-elapsed">Día 1</span>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <div class="card" id="dmv-card">
+        <div class="card-title">📋 Día Mínimo Viable</div>
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--coral); margin-bottom:6px;">No negociable</div>
+        <div id="dmv-checks">
+          <div class="check-item" onclick="toggleCheck(this)">
+            <input type="checkbox"><label>Journaling de 5 min (al despertar)</label>
+          </div>
+        </div>
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--gray); margin:14px 0 6px;">Bonus (si hay margen)</div>
+        <div id="dmv-bonus">
+          <div class="check-item" onclick="toggleCheck(this)">
+            <input type="checkbox"><label>1 acción de emprendimiento (min. 15 min)</label>
+          </div>
+          <div class="check-item" onclick="toggleCheck(this)">
+            <input type="checkbox"><label>Acostarse a las 22:00</label>
+          </div>
+        </div>
+        <div class="dmv-banner show" id="dmv-msg">Marcá lo no negociable para sumar el día a tu racha</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚡ Protocolo 5 segundos</div>
+        <div class="five-sec">
+          <h3>Cuando sientas parálisis</h3>
+          <div class="counter" id="countdown">5</div>
+          <p>Presioná y contá en voz alta</p>
+          <button class="btn btn-teal" style="margin-top:12px" onclick="startCountdown()">Iniciar cuenta</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title">🕐 Bloques del Día</div>
+        <div class="time-blocks">
+          <div class="time-block">
+            <div class="time-label">06:30</div>
+            <div class="block-content block-sal"><div class="block-label">Salud</div>Despertar + agua + caminata 20 min</div>
+          </div>
+          <div class="time-block">
+            <div class="time-label">06:32</div>
+            <div class="block-content block-men"><div class="block-label">Mentalidad</div>Journaling — 1 pregunta: ¿qué acción hago hoy?</div>
+          </div>
+          <div class="time-block">
+            <div class="time-label">07:00</div>
+            <div class="block-content block-sal"><div class="block-label">Salud</div>Desayuno sin pantallas</div>
+          </div>
+          <div class="time-block">
+            <div class="time-label">09:00</div>
+            <div class="block-content block-empr"><div class="block-label">Emprendimiento ⭐</div>Bloque principal — 4 horas de foco profundo</div>
+          </div>
+          <div class="time-block">
+            <div class="time-label">13:00</div>
+            <div class="block-content block-lib"><div class="block-label">Pausa</div>Almuerzo + descanso real (sin pantallas)</div>
+          </div>
+          <div class="time-block">
+            <div class="time-label">14:00</div>
+            <div class="block-content block-ing"><div class="block-label">Ingresos</div>Búsqueda corporativa / seguimiento contactos</div>
+          </div>
+          <div class="time-block">
+            <div class="time-label">22:00</div>
+            <div class="block-content block-sal"><div class="block-label">Cierre</div>Pantallas off — preparar el día siguiente</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📝 Mi acción de emprendimiento de HOY</div>
+    <textarea id="accion-hoy" placeholder="¿Qué acción específica de emprendimiento voy a hacer hoy? (contactar a alguien, crear contenido, definir oferta, etc.)" rows="3"></textarea>
+    <div style="margin-top:10px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <button class="btn btn-teal" onclick="saveAccion()">Guardar acción</button>
+      <span id="accion-saved" style="font-size:12px; color:var(--teal); display:none;">✓ Guardado</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ HABITOS ═══════════════════════ -->
+<div id="view-habitos" class="view">
+  <div class="two-col" style="margin-bottom:20px">
+    <div class="card">
+      <div class="streak-display">
+        <div class="streak-flames" id="flames">🔥</div>
+        <div class="streak-num" id="streak-num">0</div>
+        <div class="streak-label">días de racha DMV</div>
+        <div style="margin-top:14px">
+          <button class="btn btn-teal" onclick="addStreak()" style="margin-right:8px">+ Día cumplido</button>
+          <button class="btn btn-outline" onclick="resetStreak()">Reiniciar</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">📊 Esta semana</div>
+      <div id="weekly-stats" style="font-size:13px; color:var(--gray)">
+        <div style="margin:8px 0">Días DMV esta semana: <strong id="dmv-week">0</strong>/7</div>
+        <div class="progress-bar"><div class="progress-fill" id="pb-dmv" style="width:0%"></div></div>
+        <div style="margin:14px 0 4px">Hábito de movimiento:</div>
+        <div class="progress-bar"><div class="progress-fill" id="pb-mov" style="width:0%; background:var(--purple)"></div></div>
+        <div style="margin:14px 0 4px">Bloque emprendimiento completado:</div>
+        <div class="progress-bar"><div class="progress-fill" id="pb-empr" style="width:0%; background:var(--teal-mid)"></div></div>
+        <div style="margin:14px 0 4px">Sueño a las 22:00:</div>
+        <div class="progress-bar"><div class="progress-fill" id="pb-sue" style="width:0%; background:var(--amber)"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📅 Tracker de Hábitos — Semana Actual</div>
+    <div class="week-nav">
+      <button onclick="prevWeek()">◀</button>
+      <span id="week-label">Semana actual</span>
+      <button onclick="nextWeek()">▶</button>
+    </div>
+    <div class="day-headers">
+      <div></div>
+      <div class="day-h">L</div><div class="day-h">M</div><div class="day-h">X</div>
+      <div class="day-h">J</div><div class="day-h">V</div><div class="day-h">S</div><div class="day-h">D</div>
+    </div>
+    <div class="habit-grid" id="habit-grid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎯 Reto Semanal</div>
+    <div style="display:flex; gap:12px; align-items:flex-start; flex-wrap:wrap;">
+      <div style="flex:1; min-width:200px">
+        <div style="font-size:13px; margin-bottom:8px; color:var(--gray)">Esta semana me comprometo a intentar:</div>
+        <textarea id="reto-semanal" placeholder="Ej: contactar a 3 personas de mi lista, publicar mi primera historia personal, ofrecer una sesión de diagnóstico..." rows="2"></textarea>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:8px; padding-top:24px">
+        <button class="btn btn-teal" onclick="saveReto()">Guardar reto</button>
+        <div id="reto-saved" style="font-size:12px; color:var(--teal); display:none; text-align:center">✓ Guardado</div>
+      </div>
+    </div>
+    <div id="reto-display" style="margin-top:12px; display:none; padding:10px 14px; background:var(--teal-light); border-radius:8px; font-size:13px; color:var(--teal)"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ CALENDARIO ═══════════════════════ -->
+<div id="view-calendario" class="view">
+  <div class="card">
+    <div class="card-title">📌 Actividades importantes</div>
+    <div style="font-size:13px; color:var(--gray); margin-bottom:14px">
+      Anotá aquí lo que no entra en los bloques diarios fijos: turnos, llamadas, entregas, recordatorios puntuales, etc.
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin-bottom:16px;">
+      <div style="flex:0 0 160px;">
+        <div class="section-label" style="margin-top:0">Fecha</div>
+        <input type="date" id="evento-fecha" style="width:100%; border:1.5px solid #e0ded8; border-radius:8px; padding:10px; font-size:13px; font-family:inherit; color:var(--dark);">
+      </div>
+      <div style="flex:1; min-width:200px;">
+        <div class="section-label" style="margin-top:0">Actividad</div>
+        <input type="text" id="evento-texto" placeholder="Ej: Llamada con clienta potencial, turno médico, entrega de propuesta..." style="width:100%; border:1.5px solid #e0ded8; border-radius:8px; padding:10px; font-size:13px; font-family:inherit; color:var(--dark);">
+      </div>
+      <button class="btn btn-teal" onclick="addEvento()">Agregar</button>
+    </div>
+    <div id="eventos-lista"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ MENTALIDAD ═══════════════════════ -->
+<div id="view-mentalidad" class="view">
+
+  <div class="mantra-box">
+    <p>«Tengo la credencial más difícil: sé desde adentro lo que mis clientas viven. Eso no se estudia — se vive. Mi historia personal es mi propuesta única.»</p>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title">🔄 Reformulaciones Neuro-Integradoras</div>
+    <div class="beliefs-grid">
+      <div class="belief-card">
+        <div class="belief-lim"><div class="tag">Creencia limitante</div><p>«No tengo credenciales para hablar de neurociencia»</p></div>
+        <div class="belief-ref"><div class="tag">Reformulación</div><p>Tengo la credencial más difícil de conseguir: sé desde adentro lo que mis clientas viven. Y tengo 7 años de formación. Seth Godin no tiene título de MBA.</p></div>
+      </div>
+      <div class="belief-card">
+        <div class="belief-lim"><div class="tag">Creencia limitante</div><p>«No sé vender»</p></div>
+        <div class="belief-ref"><div class="tag">Reformulación</div><p>Sé conectar y escuchar profundo. Eso ES vender en servicios de bienestar. La venta es consecuencia de la conexión genuina.</p></div>
+      </div>
+      <div class="belief-card">
+        <div class="belief-lim"><div class="tag">Creencia limitante</div><p>«Hay muchos haciendo lo mismo»</p></div>
+        <div class="belief-ref"><div class="tag">Reformulación</div><p>No hay nadie con mi combinación exacta: negocios + coaching + neurociencia + mi historia personal. La tribu que me busca me busca a MÍ.</p></div>
+      </div>
+      <div class="belief-card">
+        <div class="belief-lim"><div class="tag">Creencia limitante</div><p>«Dos años de estancamiento prueban que no puedo»</p></div>
+        <div class="belief-ref"><div class="tag">Reformulación</div><p>Dos años buscando la forma correcta me dieron claridad que no tenía. El estancamiento era preparación. Hoy tengo el sistema que me faltaba.</p></div>
+      </div>
+      <div class="belief-card">
+        <div class="belief-lim"><div class="tag">Creencia limitante</div><p>«Me noto insegura cuando ofrezco mis servicios»</p></div>
+        <div class="belief-ref"><div class="tag">Reformulación</div><p>La inseguridad es información, no veredicto. Aparece en el umbral de cosas que importan. Cuento 5-4-3-2-1 y lo digo igual.</p></div>
+      </div>
+      <div class="belief-card">
+        <div class="belief-lim"><div class="tag">Creencia limitante</div><p>«No sé si tiene mercado»</p></div>
+        <div class="belief-ref"><div class="tag">Reformulación</div><p>Cada vez que alguien duerme mal, se agota o no puede concentrarse, hay mercado para lo que ofrezco. Y eso no para.</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">✏️ Journaling diario — Mi pregunta</div>
+    <div style="padding:12px 16px; background:var(--teal-light); border-radius:8px; margin-bottom:12px; font-size:14px; color:var(--teal); font-weight:600;">
+      ¿Qué acción pequeña puedo hacer hoy que me acerque 1% a mi objetivo?
+    </div>
+    <textarea id="journal-text" placeholder="Escribí aquí tu respuesta de hoy... (este es tu espacio privado)" rows="5"></textarea>
+    <div style="margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-teal" onclick="saveJournal()">Guardar entrada</button>
+      <button class="btn btn-outline" onclick="clearJournal()">Limpiar</button>
+      <span id="journal-saved" style="font-size:12px; color:var(--teal); display:none; align-self:center">✓ Guardado</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🧘 Práctica de Mentalidad — Progreso Escalonado</div>
+    <div style="display:grid; gap:8px;">
+      <div style="padding:12px; border-radius:8px; border:1.5px solid var(--teal-light); display:flex; justify-content:space-between; align-items:center;">
+        <div><strong style="font-size:13px">Semana 1-2:</strong> <span style="font-size:13px">Journaling 1 pregunta · 5 min</span></div>
+        <span id="etapa-badge-1" style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; background:var(--teal); color:#fff">ACTIVA</span>
+      </div>
+      <div style="padding:12px; border-radius:8px; border:1.5px solid #e0ded8; display:flex; justify-content:space-between; align-items:center; opacity:.6;">
+        <div><strong style="font-size:13px">Semana 3-4:</strong> <span style="font-size:13px">+ Meditación guiada · 10 min</span></div>
+        <span style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; background:var(--gray-light); color:var(--gray)">Al consolidar journaling 7 días</span>
+      </div>
+      <div style="padding:12px; border-radius:8px; border:1.5px solid #e0ded8; display:flex; justify-content:space-between; align-items:center; opacity:.6;">
+        <div><strong style="font-size:13px">Mes 2:</strong> <span style="font-size:13px">+ Lectura / audio · 15 min</span></div>
+        <span style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; background:var(--gray-light); color:var(--gray)">Al consolidar meditación</span>
+      </div>
+      <div style="padding:12px; border-radius:8px; border:1.5px solid #e0ded8; display:flex; justify-content:space-between; align-items:center; opacity:.6;">
+        <div><strong style="font-size:13px">Mes 3:</strong> <span style="font-size:13px">Protocolo completo · 30 min matutinos</span></div>
+        <span style="padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; background:var(--gray-light); color:var(--gray)">Automático</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ MAPA DEL PLAN ═══════════════════════ -->
+<div id="view-mapa" class="view">
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-val" id="m-hitos">0%</div><div class="metric-label">Hitos completados</div></div>
+    <div class="metric"><div class="metric-val" id="m-mes">Mes 1</div><div class="metric-label">Fase actual</div></div>
+    <div class="metric"><div class="metric-val">USD 700</div><div class="metric-label">Meta 3 meses</div></div>
+    <div class="metric"><div class="metric-val">USD 1.5K</div><div class="metric-label">Meta 12 meses</div></div>
+  </div>
+
+  <div class="month-grid">
+    <!-- MES 1 -->
+    <div class="month-card">
+      <div class="month-head">
+        <h3>MES 1 — Fundación</h3>
+        <p>Poner el piso del sistema</p>
+      </div>
+      <div class="month-body" id="mes1-body">
+        <div class="section-label">Biológico</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Protocolo sueño 22:00 activo (7 días)</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Caminata matutina 20 min (5+ días/sem)</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Desayuno sin pantallas instalado</span></div>
+        <div class="section-label">Identidad</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Horario de trabajo fijo en Google Calendar</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Oferta piloto definida (precio + formato)</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Lista de 30 contactos creada</span></div>
+        <div class="section-label">Exposición</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Primer contenido publicado (tu historia)</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>10 primeros mensajes personalizados enviados</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>3 temas de contenido definidos y calendarizados</span></div>
+      </div>
+    </div>
+
+    <!-- MES 2 -->
+    <div class="month-card">
+      <div class="month-head" style="background:var(--purple)">
+        <h3>MES 2 — Validación</h3>
+        <p>Poner la oferta a prueba</p>
+      </div>
+      <div class="month-body">
+        <div class="section-label">Mercado</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Lista completa a 50 contactos</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>5 sesiones de diagnóstico gratuitas realizadas</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>1-2 clientas piloto a precio de acceso</span></div>
+        <div class="section-label">Contenido</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>2 piezas/semana publicadas (8 en el mes)</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Sistema de seguimiento de contactos creado</span></div>
+        <div class="section-label">Financiero</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Primeros ingresos del emprendimiento</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Checkpoint: ajuste de oferta si es necesario</span></div>
+      </div>
+    </div>
+
+    <!-- MES 3 -->
+    <div class="month-card">
+      <div class="month-head" style="background:var(--coral)">
+        <h3>MES 3 — Sistematización</h3>
+        <p>Construir la maquinaria</p>
+      </div>
+      <div class="month-body">
+        <div class="section-label">Sistema</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Metodología documentada en script de 3 pasos</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Banco de 12 piezas de contenido listas</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Lista de contactos calientes (interesados)</span></div>
+        <div class="section-label">Meta</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>USD 700/mes alcanzado o en trayectoria</span></div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Núcleo mínimo para Fase 2 definido</span></div>
+        <div class="section-label">Checkpoint</div>
+        <div class="month-item"><input type="checkbox" onchange="updateProgress()"><span>Decisión: ¿continuar Fase 1 o activar Fase 2?</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="card-title">📊 Progreso General</div>
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div class="progress-bar" style="flex:1; height:16px">
+        <div class="progress-fill" id="main-progress" style="width:0%"></div>
+      </div>
+      <span id="progress-pct" style="font-size:16px; font-weight:700; color:var(--teal); min-width:40px">0%</span>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ REVISION SEMANAL ═══════════════════════ -->
+<div id="view-semanal" class="view">
+  <div class="card">
+    <div class="card-title">📆 Revisión Semanal</div>
+    <div style="font-size:13px; color:var(--gray); margin-bottom:14px">Hacer esto cada domingo · 15-20 minutos</div>
+    <div class="review-grid">
+      <div>
+        <div class="section-label">¿Qué salió bien esta semana?</div>
+        <textarea id="r-bien" placeholder="Victorias, avances, momentos de claridad..."></textarea>
+      </div>
+      <div>
+        <div class="section-label">¿Qué no salió como esperaba?</div>
+        <textarea id="r-mal" placeholder="Sin autocrítica — solo observación. ¿Qué aprendí?"></textarea>
+      </div>
+      <div>
+        <div class="section-label">¿Qué acción de emprendimiento hice?</div>
+        <textarea id="r-empr" placeholder="Específico: a quién contacté, qué publiqué, qué creé..."></textarea>
+      </div>
+      <div>
+        <div class="section-label">¿Cuál es mi intención para la próxima semana?</div>
+        <textarea id="r-inten" placeholder="1-3 acciones concretas y medibles..."></textarea>
+      </div>
+    </div>
+    <div style="margin-top:14px">
+      <div class="section-label">¿Qué día se rompió la racha y qué hice ese mismo día al respecto?</div>
+      <textarea id="r-racha" placeholder="Si no se rompió ningún día, escribilo. Si se rompió, el foco es: ¿retomé el DMV ese mismo día o esperé al día siguiente?"></textarea>
+    </div>
+    <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; align-items:center">
+      <button class="btn btn-teal" onclick="saveReview()">Guardar revisión</button>
+      <button class="btn btn-outline" onclick="loadReview()">Cargar última</button>
+      <span id="review-saved" style="font-size:12px; color:var(--teal); display:none">✓ Guardado</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎁 Recompensas por Hitos</div>
+    <div style="display:grid; gap:8px;">
+      <div class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox"><label><strong>Primera clienta →</strong> Algo que disfrutes mucho (elegís vos)</label>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox"><label><strong>Mes 1 completo (todos los hitos) →</strong> Algo que hayas postergado</label>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox"><label><strong>5 sesiones de diagnóstico realizadas →</strong> Una noche especial para vos</label>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox"><label><strong>USD 700/mes →</strong> Inversión en el negocio que elijas</label>
+      </div>
+      <div class="check-item" onclick="toggleCheck(this)">
+        <input type="checkbox"><label><strong>Primera clienta que renueva →</strong> Definir aquí tu recompensa grande</label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+const S = {
+  streak: parseInt(localStorage.getItem('streak') || '0'),
+  currentWeek: 0,
+  habits: JSON.parse(localStorage.getItem('habits') || '{}'),
+  checkboxes: JSON.parse(localStorage.getItem('checkboxes') || '{}'),
+  review: JSON.parse(localStorage.getItem('review') || '{}'),
+  reto: localStorage.getItem('reto') || '',
+  journal: localStorage.getItem('journal') || '',
+  accion: localStorage.getItem('accion') || '',
+};
+
+const HABITS = [
+  { id: 'sue', label: 'Sueño 22:00', color: 'var(--amber)' },
+  { id: 'mov', label: 'Movimiento matutino', color: 'var(--teal-mid)' },
+  { id: 'journal', label: 'Journaling 5 min', color: 'var(--purple)' },
+  { id: 'empr', label: 'Bloque emprendimiento', color: 'var(--teal)' },
+  { id: 'contacto', label: '1 contacto/acción', color: '#378ADD' },
+  { id: 'agua', label: 'Hidratación', color: '#1D9E75' },
+];
+
+// ── Navigation ────────────────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ── Date ──────────────────────────────────────────────────────────
+function initDate() {
+  const now = new Date();
+  const opts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  document.getElementById('today-date').textContent = now.toLocaleDateString('es-AR', opts);
+  const start = localStorage.getItem('start-date');
+  if (!start) localStorage.setItem('start-date', now.toISOString());
+  const diff = Math.floor((now - new Date(localStorage.getItem('start-date'))) / 86400000) + 1;
+  document.getElementById('days-elapsed').textContent = 'Día ' + diff + ' del sistema';
+}
+
+// ── Streak ────────────────────────────────────────────────────────
+function renderStreak() {
+  const n = S.streak;
+  document.getElementById('streak-num').textContent = n;
+  const flames = n === 0 ? '' : n < 3 ? '🔥' : n < 7 ? '🔥🔥' : n < 14 ? '🔥🔥🔥' : '🔥🔥🔥🔥🔥';
+  document.getElementById('flames').textContent = flames || '💤';
+}
+function addStreak() {
+  S.streak++;
+  localStorage.setItem('streak', S.streak);
+  renderStreak();
+}
+function resetStreak() {
+  if (confirm('¿Reiniciar la racha?')) {
+    S.streak = 0;
+    localStorage.setItem('streak', '0');
+    renderStreak();
+  }
+}
+
+// ── Habit Grid ────────────────────────────────────────────────────
+function getWeekKey(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() - d.getDay() + 1 + (offset * 7));
+  return d.toISOString().slice(0, 10);
+}
+function renderHabitGrid() {
+  const wk = getWeekKey(S.currentWeek);
+  const d = new Date(wk);
+  const days = Array.from({length: 7}, (_, i) => {
+    const dd = new Date(d);
+    dd.setDate(d.getDate() + i);
+    return dd.toISOString().slice(0, 10);
+  });
+  document.getElementById('week-label').textContent =
+    new Date(days[0]).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) + ' — ' +
+    new Date(days[6]).toLocaleDateString('es-AR', { day:'numeric', month:'short' });
+
+  const grid = document.getElementById('habit-grid');
+  grid.innerHTML = HABITS.map(h => {
+    const cells = days.map(day => {
+      const key = h.id + '_' + day;
+      const state = S.habits[key] || 0;
+      const cls = state === 1 ? 'done' : state === 2 ? 'skip' : '';
+      const emoji = state === 1 ? '✓' : state === 2 ? '–' : '';
+      return `<div class="habit-day ${cls}" onclick="toggleHabit('${h.id}','${day}')" title="${day}">${emoji}</div>`;
+    }).join('');
+    return `<div class="habit-row"><div class="habit-name" style="font-size:12px;color:var(--dark)">${h.label}</div>${cells}</div>`;
+  }).join('');
+
+  // Update progress bars
+  const today = new Date().toISOString().slice(0, 10);
+  const weekDays = days.filter(d => d <= today);
+  const pct = (id) => {
+    if (!weekDays.length) return 0;
+    return Math.round(weekDays.filter(d => S.habits[id + '_' + d] === 1).length / weekDays.length * 100);
+  };
+  const dmvDays = weekDays.filter(d => S.habits['sue_' + d] === 1 && S.habits['journal_' + d] === 1 && S.habits['empr_' + d] === 1).length;
+  document.getElementById('dmv-week').textContent = dmvDays;
+  document.getElementById('pb-dmv').style.width = Math.round(dmvDays / 7 * 100) + '%';
+  document.getElementById('pb-mov').style.width = pct('mov') + '%';
+  document.getElementById('pb-empr').style.width = pct('empr') + '%';
+  document.getElementById('pb-sue').style.width = pct('sue') + '%';
+}
+function toggleHabit(id, day) {
+  const key = id + '_' + day;
+  S.habits[key] = ((S.habits[key] || 0) + 1) % 3;
+  localStorage.setItem('habits', JSON.stringify(S.habits));
+  renderHabitGrid();
+}
+function prevWeek() { S.currentWeek--; renderHabitGrid(); }
+function nextWeek() { S.currentWeek = Math.min(0, S.currentWeek + 1); renderHabitGrid(); }
+
+// ── Checkboxes (generic) ──────────────────────────────────────────
+function toggleCheck(el) {
+  const cb = el.querySelector('input[type=checkbox]');
+  cb.checked = !cb.checked;
+  el.classList.toggle('done', cb.checked);
+  const id = el.closest('[id]')?.id || 'g';
+  const idx = Array.from(el.parentNode.children).indexOf(el);
+  S.checkboxes[id + '_' + idx] = cb.checked;
+  localStorage.setItem('checkboxes', JSON.stringify(S.checkboxes));
+}
+
+// ── Progress ──────────────────────────────────────────────────────
+function updateProgress() {
+  const all = document.querySelectorAll('#view-mapa input[type=checkbox]');
+  const done = Array.from(all).filter(c => c.checked).length;
+  const pct = all.length ? Math.round(done / all.length * 100) : 0;
+  document.getElementById('main-progress').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+  document.getElementById('m-hitos').textContent = pct + '%';
+  localStorage.setItem('mapa-checks', JSON.stringify(Array.from(all).map(c => c.checked)));
+}
+function loadMapaChecks() {
+  const saved = JSON.parse(localStorage.getItem('mapa-checks') || '[]');
+  const all = document.querySelectorAll('#view-mapa input[type=checkbox]');
+  all.forEach((c, i) => { if (saved[i]) { c.checked = true; c.closest('.month-item').classList.add('done'); } });
+  updateProgress();
+}
+
+// ── DMV checks ────────────────────────────────────────────────────
+function celebrate(card, banner) {
+  card.classList.remove('pop'); card.classList.add('confetti-burst');
+  void card.offsetWidth; // restart animation
+  card.classList.add('pop');
+  for (let i = 0; i < 8; i++) {
+    const c = document.createElement('span');
+    c.className = 'confetti';
+    c.textContent = ['🎉','✨','🌟','💪'][i % 4];
+    c.style.left = (10 + Math.random() * 80) + '%';
+    c.style.animationDelay = (Math.random() * 0.2) + 's';
+    card.appendChild(c);
+    setTimeout(() => c.remove(), 1200);
+  }
+  banner.classList.add('celebrate');
+}
+
+function initDMV() {
+  const savedMain = JSON.parse(localStorage.getItem('dmv') || '[]');
+  const savedBonus = JSON.parse(localStorage.getItem('dmv-bonus') || '[]');
+  const card = document.getElementById('dmv-card');
+  const banner = document.getElementById('dmv-msg');
+
+  document.querySelectorAll('#dmv-checks .check-item').forEach((el, i) => {
+    if (savedMain[i]) { el.querySelector('input').checked = true; el.classList.add('done'); }
+    el.onclick = function() {
+      const cb = this.querySelector('input');
+      cb.checked = !cb.checked;
+      this.classList.toggle('done', cb.checked);
+      const all = document.querySelectorAll('#dmv-checks input[type=checkbox]');
+      const done = Array.from(all).filter(c => c.checked).length;
+      const total = all.length;
+      if (done === total) {
+        banner.textContent = '🌟 ¡Lo no negociable está cumplido! Sumá este día a tu racha.';
+        celebrate(card, banner);
+      } else {
+        banner.textContent = 'Marcá lo no negociable para sumar el día a tu racha';
+        banner.classList.remove('celebrate');
+        card.classList.remove('celebrate');
+      }
+      localStorage.setItem('dmv', JSON.stringify(Array.from(all).map(c => c.checked)));
+    };
+  });
+
+  document.querySelectorAll('#dmv-bonus .check-item').forEach((el, i) => {
+    if (savedBonus[i]) { el.querySelector('input').checked = true; el.classList.add('done'); }
+    el.onclick = function() {
+      const cb = this.querySelector('input');
+      cb.checked = !cb.checked;
+      this.classList.toggle('done', cb.checked);
+      const all = document.querySelectorAll('#dmv-bonus input[type=checkbox]');
+      localStorage.setItem('dmv-bonus', JSON.stringify(Array.from(all).map(c => c.checked)));
+    };
+  });
+
+  // Restore celebration state on load
+  const mainAll = document.querySelectorAll('#dmv-checks input[type=checkbox]');
+  if (mainAll.length && Array.from(mainAll).every(c => c.checked)) {
+    banner.textContent = '🌟 ¡Lo no negociable está cumplido! Sumá este día a tu racha.';
+    banner.classList.add('celebrate');
+    card.classList.add('celebrate');
+  }
+}
+
+// ── Countdown ────────────────────────────────────────────────────
+let counting = false;
+function startCountdown() {
+  if (counting) return;
+  counting = true;
+  let n = 5;
+  const el = document.getElementById('countdown');
+  const btn = event.target;
+  btn.disabled = true;
+  const interval = setInterval(() => {
+    el.textContent = n;
+    if (n === 0) {
+      clearInterval(interval);
+      el.textContent = '¡YA!';
+      setTimeout(() => { el.textContent = '5'; btn.disabled = false; counting = false; }, 2000);
+    }
+    n--;
+  }, 600);
+}
+
+// ── Journal ───────────────────────────────────────────────────────
+function saveJournal() {
+  const v = document.getElementById('journal-text').value;
+  const today = new Date().toISOString().slice(0, 10);
+  const all = JSON.parse(localStorage.getItem('journals') || '{}');
+  all[today] = v;
+  localStorage.setItem('journals', JSON.stringify(all));
+  const s = document.getElementById('journal-saved');
+  s.style.display = 'inline'; setTimeout(() => s.style.display = 'none', 2000);
+}
+function clearJournal() { document.getElementById('journal-text').value = ''; }
+
+// ── Accion ────────────────────────────────────────────────────────
+function saveAccion() {
+  localStorage.setItem('accion', document.getElementById('accion-hoy').value);
+  const s = document.getElementById('accion-saved');
+  s.style.display = 'inline'; setTimeout(() => s.style.display = 'none', 2000);
+}
+
+// ── Reto ─────────────────────────────────────────────────────────
+function saveReto() {
+  const v = document.getElementById('reto-semanal').value;
+  localStorage.setItem('reto', v);
+  document.getElementById('reto-display').textContent = '🎯 Esta semana: ' + v;
+  document.getElementById('reto-display').style.display = 'block';
+  const s = document.getElementById('reto-saved');
+  s.style.display = 'block'; setTimeout(() => s.style.display = 'none', 2000);
+}
+
+// ── Weekly Review ─────────────────────────────────────────────────
+function saveReview() {
+  const today = new Date().toISOString().slice(0, 10);
+  S.review[today] = {
+    bien: document.getElementById('r-bien').value,
+    mal: document.getElementById('r-mal').value,
+    empr: document.getElementById('r-empr').value,
+    inten: document.getElementById('r-inten').value,
+    racha: document.getElementById('r-racha').value,
+  };
+  localStorage.setItem('review', JSON.stringify(S.review));
+  const s = document.getElementById('review-saved');
+  s.style.display = 'inline'; setTimeout(() => s.style.display = 'none', 2000);
+}
+function loadReview() {
+  const keys = Object.keys(S.review).sort().reverse();
+  if (!keys.length) return;
+  const r = S.review[keys[0]];
+  document.getElementById('r-bien').value = r.bien || '';
+  document.getElementById('r-mal').value = r.mal || '';
+  document.getElementById('r-empr').value = r.empr || '';
+  document.getElementById('r-inten').value = r.inten || '';
+  document.getElementById('r-racha').value = r.racha || '';
+}
+
+// ── Calendario / Actividades ───────────────────────────────────────
+function loadEventos() {
+  return JSON.parse(localStorage.getItem('eventos') || '[]');
+}
+function saveEventos(list) {
+  localStorage.setItem('eventos', JSON.stringify(list));
+}
+function addEvento() {
+  const fecha = document.getElementById('evento-fecha').value;
+  const texto = document.getElementById('evento-texto').value.trim();
+  if (!fecha || !texto) return;
+  const list = loadEventos();
+  list.push({ id: Date.now(), fecha, texto });
+  saveEventos(list);
+  document.getElementById('evento-texto').value = '';
+  renderEventos();
+}
+function delEvento(id) {
+  const list = loadEventos().filter(e => e.id !== id);
+  saveEventos(list);
+  renderEventos();
+}
+function renderEventos() {
+  const list = loadEventos().sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const cont = document.getElementById('eventos-lista');
+  if (!list.length) {
+    cont.innerHTML = '<div class="evento-empty">Todavía no agregaste actividades.</div>';
+    return;
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  cont.innerHTML = list.map(e => {
+    const pasado = e.fecha < today;
+    const fechaFmt = new Date(e.fecha + 'T00:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `<div class="evento-item">
+      <div class="evento-fecha ${pasado ? 'pasado' : ''}">${fechaFmt}</div>
+      <div class="evento-texto ${pasado ? 'pasado' : ''}">${e.texto}</div>
+      <button class="evento-del" onclick="delEvento(${e.id})" title="Eliminar">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Exportar / Importar datos ───────────────────────────────────────
+const DATA_KEYS = [
+  'streak', 'habits', 'checkboxes', 'dmv', 'dmv-bonus', 'mapa-checks',
+  'reto', 'journal', 'journals', 'accion', 'eventos', 'review', 'start-date'
+];
+
+function showDataMsg(text, ok) {
+  const el = document.getElementById('data-msg');
+  el.textContent = text;
+  el.className = 'data-msg show ' + (ok ? 'ok' : 'err');
+  setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+function exportData() {
+  const data = {};
+  DATA_KEYS.forEach(k => {
+    const v = localStorage.getItem(k);
+    if (v !== null) data[k] = v;
+  });
+  const payload = {
+    app: 'sistema-cimentacion',
+    version: 3,
+    exportedAt: new Date().toISOString(),
+    data
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fecha = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `cimentacion-backup-${fecha}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showDataMsg('✓ Datos exportados. Guardá el archivo .json en un lugar seguro (Drive, mail, etc.)', true);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    let payload;
+    try {
+      payload = JSON.parse(e.target.result);
+    } catch {
+      showDataMsg('✗ El archivo no es un JSON válido.', false);
+      event.target.value = '';
+      return;
+    }
+    if (!payload || payload.app !== 'sistema-cimentacion' || typeof payload.data !== 'object') {
+      showDataMsg('✗ Este archivo no parece ser un respaldo del Sistema de Cimentación.', false);
+      event.target.value = '';
+      return;
+    }
+    const confirmMsg = '¿Importar este respaldo? Esto sobrescribirá los datos actuales guardados en este dispositivo (racha, hábitos, journaling, calendario, revisiones, mapa de progreso).';
+    if (!confirm(confirmMsg)) {
+      event.target.value = '';
+      return;
+    }
+    DATA_KEYS.forEach(k => {
+      if (payload.data[k] !== undefined) localStorage.setItem(k, payload.data[k]);
+      else localStorage.removeItem(k);
+    });
+    showDataMsg('✓ Datos importados. Recargando...', true);
+    setTimeout(() => location.reload(), 1000);
+  };
+  reader.readAsText(file);
+}
+
+
+function init() {
+  initDate();
+  renderStreak();
+  renderHabitGrid();
+  loadMapaChecks();
+  initDMV();
+  renderEventos();
+  document.getElementById('evento-fecha').value = new Date().toISOString().slice(0, 10);
+  const savedReto = localStorage.getItem('reto');
+  if (savedReto) {
+    document.getElementById('reto-semanal').value = savedReto;
+    document.getElementById('reto-display').textContent = '🎯 Esta semana: ' + savedReto;
+    document.getElementById('reto-display').style.display = 'block';
+  }
+  const savedAccion = localStorage.getItem('accion');
+  if (savedAccion) document.getElementById('accion-hoy').value = savedAccion;
+}
+
+init();
+</script>
+</body>
+</html>
